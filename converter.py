@@ -20,6 +20,49 @@ def stringformat(var):
             return str(var)
 
 
+def pgxjsonfile(G, out, nlabels, elabel, eprops, fformat):
+    with open("{}.json".format(out), 'w') as outfile:
+        out = {}
+        out["format"] = fformat
+        out["edge_label"] = "true"
+        props = []
+        for u, v, d in G.edge_iter(data=True):
+            edatadict = d
+            break
+        for prop in eprops:
+            propdict = {"name": prop}
+            val = edatadict[prop]
+            if isinstance(val, bool):
+                propdict["type"] = "boolean"
+            elif isinstance(val, int):
+                propdict["type"] = "integer"
+            elif isinstance(val, float):
+                propdict["type"] = "double"
+            elif isinstance(val, str):
+                propdict["type"] = "string"
+            props.append(propdict)
+        out["vertex_props"] = props
+        out["vertex_labels"] = str(bool(nlabels)).lower()
+        props = []
+        for node in G:
+            ndatadict = G.node[node]
+            break
+        for prop in sorted(ndatadict.keys()):
+            if prop in nlabels:
+                continue
+            val = ndatadict[prop]
+            if isinstance(val, bool):
+                propdict["type"] = "boolean"
+            elif isinstance(val, int):
+                propdict["type"] = "integer"
+            elif isinstance(val, float):
+                propdict["type"] = "double"
+            elif isinstance(val, str):
+                propdict["type"] = "string"
+            props.append(propdict)
+        json.dump(out, outfile)
+
+
 def NxtoPgx(G, out, nlabels=["ntype"],
             elabel="etype", eprops=["weight"], pgxtype="elist"):
     """
@@ -64,45 +107,7 @@ def NxtoPgxEdgelist(G, out, nlabels=["ntype"],
             for key in sorted(d.keys()):
                 if key is not elabel:
                     line += " {}".format(stringformat(d[key]))
-            edatadict = d
-    with open("{}.json".format(out), 'w') as outfile:
-        out = {}
-        out["format"] = "edge_list"
-        out["edge_label"] = "true"
-        props = []
-        for prop in eprops:
-            propdict = {"name": prop}
-            val = edatadict[prop]
-            if isinstance(val, bool):
-                propdict["type"] = "boolean"
-            elif isinstance(val, int):
-                propdict["type"] = "integer"
-            elif isinstance(val, float):
-                propdict["type"] = "double"
-            elif isinstance(val, str):
-                propdict["type"] = "string"
-            props.append(propdict)
-        out["vertex_props"] = props
-        out["vertex_labels"] = "true"
-        props = []
-        for node in G:
-            ndatadict = G.node[node]
-            break
-        for prop in sorted(ndatadict.keys()):
-            if prop in nlabels:
-                continue
-            val = ndatadict[prop]
-            val = edatadict[prop]
-            if isinstance(val, bool):
-                propdict["type"] = "boolean"
-            elif isinstance(val, int):
-                propdict["type"] = "integer"
-            elif isinstance(val, float):
-                propdict["type"] = "double"
-            elif isinstance(val, str):
-                propdict["type"] = "string"
-            props.append(propdict)
-        json.dump(out, outfile)
+    pgxjsonfile(G, out, nlabels, elabel, eprops, "edge_list")
 
 
 if __name__ == "__main__":
