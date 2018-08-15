@@ -13,26 +13,29 @@ def stringformat(var):
     try:
         return "\"" + var + "\""
     except TypeError:
-        return str(var)
+        if isinstance(var, bool):
+            return str(var).lower()
+        else:
+            return str(var)
 
 
-def NxtoPgx(G, out, nlabels=["ntype"], nprops=None,
-            elabels=["etype"], eprops=["weight"], pgxtype="elist"):
+def NxtoPgx(G, out, nlabels=["ntype"], nprops=[],
+            elabel="etype", eprops=["weight"], pgxtype="elist"):
     """
     Outputs a PGX representation of a given networkX graph.
     """
     if pgxtype == "elist":
         NxtoPgxEdgelist(G, out, nlabels=nlabels, nprops=nprops,
-                        elabels=elabels, eprops=eprops)
+                        elabel=elabel, eprops=eprops)
     else:
         raise ValueError("Unsupported Output Type")
 
 
-def NxtoPgxEdgelist(G, out, nlabels=None, nprops=None,
-                    elabels=None, eprops=["weight"]):
+def NxtoPgxEdgelist(G, out, nlabels=["ntype"], nprops=[],
+                    elabel="etype", eprops=["weight"]):
     with open(out+".ogv", "w") as outfile:
         for node in G:
-            line = str(node) + ' * '
+            line = stringformat(node) + ' * '
             propdict = G.node[node]
             runs = 0
             for label in nlabels:
@@ -53,15 +56,19 @@ def NxtoPgxEdgelist(G, out, nlabels=None, nprops=None,
                     line += ' ' + stringformat(propdict[key])
                 line += '\n'
             outfile.write(line)
-        for edge in G:
-            pass
+        for u, v, d in G.edges_iter(data=True):
+            line = "{} {}".format(stringformat(u), stringformat(v))
+            line += " \"{}\"".format(d[elabel])
+            for key in sorted(d.keys()):
+                if key is not elabel:
+                    line += " {}".format(stringformat(d[key]))
 
 
 if __name__ == "__main__":
     with open("Jollibee_Stores.csv", 'r') as infile:
         reader = csv.reader(infile)
         runs = 0
-        G = nx.MultiDiGraph()
+        G = nx.DiGraph()
         for row in reader:
             if not runs:
                 runs += 1
