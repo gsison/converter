@@ -7,6 +7,7 @@ Created on Tue Aug 14 14:04:14 2018
 
 import csv
 import networkx as nx
+import simplejson as json
 
 
 def stringformat(var):
@@ -19,21 +20,22 @@ def stringformat(var):
             return str(var)
 
 
-def NxtoPgx(G, out, nlabels=["ntype"], nprops=[],
+def NxtoPgx(G, out, nlabels=["ntype"],
             elabel="etype", eprops=["weight"], pgxtype="elist"):
     """
     Outputs a PGX representation of a given networkX graph.
     """
     if pgxtype == "elist":
-        NxtoPgxEdgelist(G, out, nlabels=nlabels, nprops=nprops,
+        NxtoPgxEdgelist(G, out, nlabels=nlabels,
                         elabel=elabel, eprops=eprops)
     else:
         raise ValueError("Unsupported Output Type")
 
 
-def NxtoPgxEdgelist(G, out, nlabels=["ntype"], nprops=[],
+def NxtoPgxEdgelist(G, out, nlabels=["ntype"],
                     elabel="etype", eprops=["weight"]):
-    with open(out+".ogv", "w") as outfile:
+    edatadict = {}
+    with open(out+".elst", "w") as outfile:
         for node in G:
             line = stringformat(node) + ' * '
             propdict = G.node[node]
@@ -62,6 +64,45 @@ def NxtoPgxEdgelist(G, out, nlabels=["ntype"], nprops=[],
             for key in sorted(d.keys()):
                 if key is not elabel:
                     line += " {}".format(stringformat(d[key]))
+            edatadict = d
+    with open("{}.json".format(out), 'w') as outfile:
+        out = {}
+        out["format"] = "edge_list"
+        out["edge_label"] = "true"
+        props = []
+        for prop in eprops:
+            propdict = {"name": prop}
+            val = edatadict[prop]
+            if isinstance(val, bool):
+                propdict["type"] = "boolean"
+            elif isinstance(val, int):
+                propdict["type"] = "integer"
+            elif isinstance(val, float):
+                propdict["type"] = "double"
+            elif isinstance(val, str):
+                propdict["type"] = "string"
+            props.append(propdict)
+        out["vertex_props"] = props
+        out["vertex_labels"] = "true"
+        props = []
+        for node in G:
+            ndatadict = G.node[node]
+            break
+        for prop in sorted(ndatadict.keys()):
+            if prop in nlabels:
+                continue
+            val = ndatadict[prop]
+            val = edatadict[prop]
+            if isinstance(val, bool):
+                propdict["type"] = "boolean"
+            elif isinstance(val, int):
+                propdict["type"] = "integer"
+            elif isinstance(val, float):
+                propdict["type"] = "double"
+            elif isinstance(val, str):
+                propdict["type"] = "string"
+            props.append(propdict)
+        json.dump(out, outfile)
 
 
 if __name__ == "__main__":
