@@ -41,15 +41,18 @@ def pgxjsonfile(G, out, nlabels, elabel, eprops, fformat):
             elif isinstance(val, str):
                 propdict["type"] = "string"
             props.append(propdict)
-        out["vertex_props"] = props
+        out["edge_props"] = props
         out["vertex_labels"] = str(bool(nlabels)).lower()
+        out["edge_label"] = str(bool(elabel)).lower()
         props = []
         for node in G:
             ndatadict = G.node[node]
             break
+        print(ndatadict)
         for prop in sorted(ndatadict.keys()):
             if prop in nlabels:
                 continue
+            propdict = {"name": prop}
             val = ndatadict[prop]
             if isinstance(val, bool):
                 propdict["type"] = "boolean"
@@ -60,6 +63,7 @@ def pgxjsonfile(G, out, nlabels, elabel, eprops, fformat):
             elif isinstance(val, str):
                 propdict["type"] = "string"
             props.append(propdict)
+        out["vertex_props"] = props
         json.dump(out, outfile)
         return out
 
@@ -70,8 +74,8 @@ def NxtoPgx(G, out, nlabels=["ntype"],
     Outputs a PGX representation of a given networkX graph.
     """
     if pgxtype == "elist":
-        NxtoPgxEdgelist(G, out, nlabels=nlabels,
-                        elabel=elabel, eprops=eprops)
+        return NxtoPgxEdgelist(G, out, nlabels=nlabels,
+                               elabel=elabel, eprops=eprops)
     else:
         raise ValueError("Unsupported Output Type")
 
