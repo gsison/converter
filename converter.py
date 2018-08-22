@@ -26,7 +26,7 @@ def pgxjsonfile(G, out, nlabels, elabel, eprops, fformat):
         out["format"] = fformat
         out["edge_label"] = "true"
         props = []
-        for u, v, d in G.edge_iter(data=True):
+        for u, v, d in G.edges(data=True):
             edatadict = d
             break
         for prop in eprops:
@@ -61,6 +61,7 @@ def pgxjsonfile(G, out, nlabels, elabel, eprops, fformat):
                 propdict["type"] = "string"
             props.append(propdict)
         json.dump(out, outfile)
+        return out
 
 
 def NxtoPgx(G, out, nlabels=["ntype"],
@@ -77,7 +78,6 @@ def NxtoPgx(G, out, nlabels=["ntype"],
 
 def NxtoPgxEdgelist(G, out, nlabels=["ntype"],
                     elabel="etype", eprops=["weight"]):
-    edatadict = {}
     with open(out+".elst", "w") as outfile:
         for node in G:
             line = stringformat(node) + ' * '
@@ -101,13 +101,15 @@ def NxtoPgxEdgelist(G, out, nlabels=["ntype"],
                     line += ' ' + stringformat(propdict[key])
                 line += '\n'
             outfile.write(line)
-        for u, v, d in G.edges_iter(data=True):
+        for u, v, d in G.edges(data=True):
             line = "{} {}".format(stringformat(u), stringformat(v))
             line += " \"{}\"".format(d[elabel])
             for key in sorted(d.keys()):
                 if key is not elabel:
                     line += " {}".format(stringformat(d[key]))
-    pgxjsonfile(G, out, nlabels, elabel, eprops, "edge_list")
+            outfile.write(line)
+    jsonout = pgxjsonfile(G, out, nlabels, elabel, eprops, "edge_list")
+    return jsonout
 
 
 if __name__ == "__main__":
@@ -147,3 +149,4 @@ if __name__ == "__main__":
                 val = float(val)
                 G.add_edge(name, JBnames[ind], distance=val, etype='Distance')
                 G.add_edge(JBnames[ind], name, distance=val, etype='Distance')
+    NOUT = NxtoPgx(G, "happybug", eprops=['etype'])
